@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<HrisDbContext>(options => 
             options.UseSqlServer(connectionString));
         
-        services.AddSingleton<IEmployeeService, EFEmployeeService>();
+        services.AddScoped<IEmployeeService, EFEmployeeService>();
         services.AddSingleton(TimeProvider.System);
         
         services.AddTransient<ITransientOperation, Operation>();   // a new instance for every injection
