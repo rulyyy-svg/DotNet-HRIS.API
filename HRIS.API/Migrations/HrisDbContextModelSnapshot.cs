@@ -57,6 +57,9 @@ namespace HRIS.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
@@ -72,10 +75,8 @@ namespace HRIS.API.Migrations
 
                     b.Property<string>("EmployeeStatus")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Active");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -152,7 +153,7 @@ namespace HRIS.API.Migrations
                         .IsRequired();
 
                     b.HasOne("HRIS.API.Entities.Employee", "Manager")
-                        .WithMany("DirectRepots")
+                        .WithMany("DirectReports")
                         .HasForeignKey("ManagerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -178,7 +179,7 @@ namespace HRIS.API.Migrations
 
             modelBuilder.Entity("HRIS.API.Entities.Employee", b =>
                 {
-                    b.Navigation("DirectRepots");
+                    b.Navigation("DirectReports");
                 });
 
             modelBuilder.Entity("HRIS.API.Entities.Position", b =>
