@@ -41,4 +41,14 @@ public class EmployeesController(IEmployeeService employeeService) : ControllerB
         => await employeeService.DeleteAsync(id, ct)
             ? NoContent()
             : NotFound();
+
+    [HttpPost("{id:guid}/terminate")]
+    public async Task<IActionResult> Terminate([FromRoute] Guid id, CancellationToken ct)
+        => await employeeService.TerminateAsync(id, ct)
+            switch
+        {
+            TerminateResult.Terminated => NoContent(),
+            TerminateResult.AlreadyTerminated => Conflict(),
+            _ => NotFound()
+        };
 }

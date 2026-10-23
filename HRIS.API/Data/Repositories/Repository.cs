@@ -24,6 +24,6 @@ namespace HRIS.API.Data.Repositories
             => Set.Update(entity);
 
         public void Delete(TEntity entity)
-            => Set.Update(entity);
+            => Set.Remove(entity);
     }
 }

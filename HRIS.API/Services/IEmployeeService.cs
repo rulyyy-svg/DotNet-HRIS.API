@@ -9,4 +9,12 @@ public interface IEmployeeService
     Task<Guid> CreateAsync(CreateEmployeeRequest request, CancellationToken ct = default);
     Task<bool> UpdateAsync(Guid id, UpdateEmployeeRequest request, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
+    Task<TerminateResult> TerminateAsync(Guid id, CancellationToken ct = default);
+}
+
+public enum TerminateResult
+{
+    Terminated,
+    NotFound,
+    AlreadyTerminated
 }

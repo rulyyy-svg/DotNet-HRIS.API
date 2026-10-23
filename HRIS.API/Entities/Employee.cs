@@ -17,8 +17,8 @@ public class Employee
     public EmployeeStatus EmployeeStatus { get; set; } = EmployeeStatus.Active;
     public DateOnly? TerminatedAt { get; set; }
     // Foreign Keys
-    public Guid DepartmentId { get; set; } 
-    public Guid PositionId { get; set; }
+    public Guid? DepartmentId { get; set; } 
+    public Guid? PositionId { get; set; }
     public Guid? ManagerId { get; set; }
     
     // Relationships
