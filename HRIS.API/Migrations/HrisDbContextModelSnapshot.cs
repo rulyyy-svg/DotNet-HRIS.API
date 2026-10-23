@@ -132,6 +132,26 @@ namespace HRIS.API.Migrations
                         .IsUnique();
 
                     b.ToTable("Positions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("01a166be-ee55-747c-b090-69f7572f26e8"),
+                            Level = 2,
+                            Title = "Staff"
+                        },
+                        new
+                        {
+                            Id = new Guid("01a166be-ee55-747c-b090-6c3b9bd9cd5c"),
+                            Level = 5,
+                            Title = "Supervisor"
+                        },
+                        new
+                        {
+                            Id = new Guid("01a166be-ee55-747c-b090-72cbd94cb9f2"),
+                            Level = 8,
+                            Title = "Department Head"
+                        });
                 });
 
             modelBuilder.Entity("HRIS.API.Entities.Department", b =>

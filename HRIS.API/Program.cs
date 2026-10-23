@@ -1,9 +1,12 @@
 using HRIS.API.Extensions;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions
+        .Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddHrisServices(builder.Configuration);
 builder.Services.AddMiddleware();
 

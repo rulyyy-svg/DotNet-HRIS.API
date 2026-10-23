@@ -2,8 +2,19 @@ using HRIS.API.Entities;
 
 namespace HRIS.API.Models;
 
-public static class EmployeeMappings
+public static class EmployeeMappingExtensions
 {
     public static EmployeeResponse ToResponse(this Employee employee) =>
-        new(employee.Id, employee.FullName, employee.Email, employee.HireDate, employee.CreatedAt);
+        new(
+            employee.Id,
+            employee.EmployeeNumber,
+            employee.FullName,
+            employee.Email,
+            employee.HireDate,
+            employee.EmployeeStatus,
+            employee.Department.Name,
+            employee.Position.Title,
+            employee.Manager?.FullName,
+            employee.CreatedAt
+        );
 }
