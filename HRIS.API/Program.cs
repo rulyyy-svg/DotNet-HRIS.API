@@ -1,4 +1,5 @@
 
+using HRIS.API.Common;
 using HRIS.API.Common.Behaviors;
 using HRIS.API.Extensions;
 using HRIS.API.Middlewares;
@@ -47,6 +48,11 @@ try
             policy.AllowAnyOrigin();
         });
     });
+
+    builder.Services.AddSingleton<TimeProvider>(
+    TimeProvider.System);
+
+    builder.Services.AddSingleton<EmployeePolicy>();
 
     builder.Services.AddOpenApi();
 
