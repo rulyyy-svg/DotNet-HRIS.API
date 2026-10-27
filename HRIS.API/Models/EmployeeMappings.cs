@@ -36,7 +36,8 @@ public static class EmployeeMappings
         return employee;
     }
 
-    public static EmployeeResponse ToResponse(this Employee employee) =>
+    public static EmployeeResponse ToResponse(
+        this Employee employee) =>
         new(
             employee.Id,
             employee.EmployeeNumber,
@@ -44,8 +45,8 @@ public static class EmployeeMappings
             employee.Email,
             employee.HireDate,
             employee.EmployeeStatus,
-            employee.Department.Name,
-            employee.Position.Title,
+            employee.Department?.Name ?? string.Empty,
+            employee.Position?.Title ?? string.Empty,
             employee.Manager?.FullName,
             employee.CreatedAt
         );

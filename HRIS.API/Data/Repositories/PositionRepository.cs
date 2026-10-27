@@ -1,6 +1,4 @@
-﻿
-using HRIS.API.Data;
-using HRIS.API.Entities;
+﻿using HRIS.API.Entities;
 
 namespace HRIS.API.Data.Repositories;
 

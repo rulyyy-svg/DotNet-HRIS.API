@@ -1,11 +1,10 @@
-﻿using HRIS.API.DTOs.Departments;
-using HRIS.API.Entities;
-using HRIS.API.Models;
+﻿using HRIS.API.Entities;
 
 namespace HRIS.API.Data.Repositories;
 
 public interface IDepartmentRepository : IRepository<Department>
 {
-    Task<IReadOnlyCollection<DepartmentResponse>> GetResponseAsync(
+    Task<bool> CodeExistsAsync(
+        string code,
         CancellationToken ct = default);
 }

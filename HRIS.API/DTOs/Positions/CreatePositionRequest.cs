@@ -1,5 +1,7 @@
-﻿namespace HRIS.API.DTOs.Positions;
+﻿
+namespace HRIS.API.DTOs.Positions;
 
 public record CreatePositionRequest(
     string Title,
-    int Level);
+    int Level
+);

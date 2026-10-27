@@ -1,61 +1,24 @@
-﻿using HRIS.API.Data;
-using HRIS.API.Entities;
-using HRIS.API.DTOs.Positions;
+﻿using HRIS.API.DTOs.Positions;
+using HRIS.API.Features.Positions.Commands.CreatePosition;
+using HRIS.API.Features.Positions.Queries.GetPositions;
+using HRIS.API.Models;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HRIS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PositionsController(HrisDbContext context) : ControllerBase
+public class PositionsController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<PositionResponse>>> GetAll(
-        CancellationToken ct)
-    {
-        var positions = await context.Positions
-            .AsNoTracking()
-            .OrderBy(p => p.Level)
-            .ThenBy(p => p.Title)
-            .Select(p => new PositionResponse(
-                p.Id,
-                p.Title,
-                p.Level
-            ))
-            .ToListAsync(ct);
-
-        return Ok(positions);
-    }
+    public async Task<ActionResult<IReadOnlyCollection<PositionResponse>>> GetAll(CancellationToken ct)
+        => Ok(await sender.Send(new GetPositionsQuery(), ct));
 
     [HttpPost]
-    public async Task<ActionResult<PositionResponse>> Create(
-        [FromBody] CreatePositionRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> Create([FromBody] CreatePositionRequest request, CancellationToken ct)
     {
-        var position = new Position
-        {
-            Id = Guid.CreateVersion7(),
-            Title = request.Title,
-            Level = request.Level
-        };
-
-        try
-        {
-            await context.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException ex)
-        {
-            Console.WriteLine(ex.ToString());
-            throw;
-        }
-
-        var response = new PositionResponse(
-            position.Id,
-            position.Title,
-            position.Level
-        );
-
-        return StatusCode(StatusCodes.Status201Created, response);
+        var id = await sender.Send(new CreatePositionCommand(request), ct);
+        return Created($"/api/positions/{id}", new { id });
     }
 }

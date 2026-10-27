@@ -1,8 +1,11 @@
 
+using HRIS.API.Common.ExceptionHandlers;
 using HRIS.API.Data;
 using HRIS.API.Data.Repositories;
 using HRIS.API.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
 
 namespace HRIS.API.Extensions;
 
@@ -12,7 +15,8 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("HrisDB");
+        var connectionString =
+            configuration.GetConnectionString("HrisDB");
 
         services.AddDbContext<HrisDbContext>(options =>
             options.UseSqlServer(connectionString));
@@ -29,9 +33,40 @@ public static class ServiceCollectionExtensions
             typeof(Repository<>));
 
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IDepartmentRepository, DepartmentRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        services.AddProblemDetails(options =>
+        {
+            options.CustomizeProblemDetails = context =>
+            {
+                var problem = context.ProblemDetails;
+
+                problem.Instance ??=
+                    context.HttpContext.Request.Path.Value;
+
+                if (context.HttpContext.Items.TryGetValue(
+                    "X-Correlation-Id",
+                    out var correlationId))
+                {
+                    problem.Extensions["correlationId"] =
+                        correlationId?.ToString();
+                }
+
+                if (problem is ValidationProblemDetails &&
+    !problem.Extensions.ContainsKey(ProblemDetailsWriter.ErrorCodeKey))
+                {
+                    problem.Extensions[ProblemDetailsWriter.ErrorCodeKey] =
+                        "MALFORMED_REQUEST";
+                }
+            };
+        });
+
+        services.AddExceptionHandler<ValidationExceptionHandler>();
+        services.AddExceptionHandler<DomainExceptionHandler>();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
         return services;
     }

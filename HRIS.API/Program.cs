@@ -1,50 +1,93 @@
+
+using HRIS.API.Common.Behaviors;
 using HRIS.API.Extensions;
+using HRIS.API.Middlewares;
+using MediatR;
+using Serilog;
 using System.Text.Json.Serialization;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add services to the container.
-builder.Services.AddControllers()
-    .AddJsonOptions(o => o.JsonSerializerOptions
-        .Converters.Add(new JsonStringEnumConverter()));
-builder.Services.AddHrisServices(builder.Configuration);
-builder.Services.AddMiddleware();
-
-builder.Services.AddCors(options =>
+try
 {
-    options.AddDefaultPolicy(policy =>
+    Log.Information("Starting HRIS API");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.AddHrisSerilog();
+
+
+    builder.Services.AddControllers(options =>
     {
-        policy.AllowAnyHeader();
-        policy.AllowAnyMethod();
-        policy.AllowAnyOrigin();
-    });
-});
+        options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+    })
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters
+            .Add(new JsonStringEnumConverter()));
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+    builder.Services.AddHrisServices(builder.Configuration);
 
-var app = builder.Build();
-
-app.UseRequestTiming();
-
-app.UseMaintenanceMode();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
+    builder.Services.AddMediatR(cfg =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "HRIS API");
+        cfg.RegisterServicesFromAssemblyContaining<Program>();
+        cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+        cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     });
+
+    builder.Services.AddMiddleware();
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.AllowAnyHeader();
+            policy.AllowAnyMethod();
+            policy.AllowAnyOrigin();
+        });
+    });
+
+    builder.Services.AddOpenApi();
+
+    var app = builder.Build();
+
+    // Global exception handler harus berada di awal pipeline.
+    app.UseExceptionHandler();
+
+    app.UseHttpsRedirection();
+    app.UseCors();
+
+    app.UseRequestTiming();
+    app.UseHrisRequestLogging();
+
+    app.UseMiddleware<UserContextLoggingMiddleware>();
+
+    app.UseMaintenanceMode();
+
+    app.UseAuthorization();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint(
+                "/openapi/v1.json",
+                "HRIS API");
+        });
+    }
+
+    app.MapControllers();
+
+    app.Run();
 }
-
-app.UseHttpsRedirection();
-
-app.UseCors();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "HRIS API terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
