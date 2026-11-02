@@ -6,7 +6,7 @@ using HRIS.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
-
+using HRIS.API.Services.Email;
 namespace HRIS.API.Extensions;
 
 public static class ServiceCollectionExtensions
@@ -37,6 +37,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPositionRepository, PositionRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // Module 9: Email Configuration
+        services.Configure<MailSettings>(
+            configuration.GetSection(MailSettings.SectionName)
+        );
+
         services.AddProblemDetails(options =>
         {
             options.CustomizeProblemDetails = context =>
@@ -63,6 +68,8 @@ public static class ServiceCollectionExtensions
             };
         });
 
+        // Module 9: Email Service
+        services.AddTransient<IEmailService, MailKitEmailService>();
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<DomainExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
