@@ -31,8 +31,8 @@ try
     // Application services
     builder.Services.AddHrisServices(builder.Configuration);
 
-    // Security: Password hashing dan Basic Authentication
-    builder.Services.AddHrisSecurity();
+    // Security: Password hashing, Basic Authentication, dan JWT
+    builder.Services.AddHrisSecurity(builder.Configuration);
 
     // MediatR dan pipeline behaviors
     builder.Services.AddMediatR(cfg =>

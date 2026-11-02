@@ -3,24 +3,19 @@ using HRIS.API.Features.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace HRIS.API.Controllers;
 
 public record LoginRequest(
     string Email,
     string Password);
 
-public record LoginResult(
-    Guid UserId,
-    Guid? EmployeeId,
-    string Email,
-    IReadOnlyCollection<string> Roles);
-
 [ApiController]
 [Route("api/auth")]
 public class AuthController(
     ISender sender,
-    IUserCredentialService credentialService)
-    : ControllerBase
+    IUserCredentialService credentialService,
+    ITokenService tokenService) : ControllerBase
 {
     /// <summary>
     /// Activate an account for an existing employee.
@@ -47,11 +42,11 @@ public class AuthController(
     }
 
     /// <summary>
-    /// Validate email and password.
+    /// Validate credentials and issue a JWT access token.
     /// </summary>
     [AllowAnonymous]
     [HttpPost("login")]
-    [ProducesResponseType<LoginResult>(
+    [ProducesResponseType<LoginResponse>(
         StatusCodes.Status200OK)]
     [ProducesResponseType(
         StatusCodes.Status401Unauthorized)]
@@ -71,11 +66,10 @@ public class AuthController(
                 title: "Invalid email or password.");
         }
 
+        var (token, expiresAt) =
+            tokenService.CreateToken(user);
+
         return Ok(
-            new LoginResult(
-                user.Id,
-                user.EmployeeId,
-                user.Email,
-                user.Roles));
+            new LoginResponse(token, expiresAt));
     }
 }
