@@ -1,10 +1,9 @@
-﻿// tests/HRIS.API.Tests/CreateDepartmentCommandHandlerTests.cs
+﻿
 using HRIS.API.Common.Exceptions;
 using HRIS.API.Data.Repositories;
 using HRIS.API.DTOs.Departments;
 using HRIS.API.Entities;
 using HRIS.API.Features.Departments.Commands.CreateDepartment;
-using HRIS.API.Models;
 using Moq;
 using Xunit;
 
@@ -18,34 +17,78 @@ public class CreateDepartmentCommandHandlerTests
 
     public CreateDepartmentCommandHandlerTests()
     {
-        _uow.Setup(u => u.Departments).Returns(_departments.Object);
+        _uow.Setup(u => u.Departments)
+            .Returns(_departments.Object);
+
         _sut = new CreateDepartmentCommandHandler(_uow.Object);
     }
 
     [Fact]
     public async Task Handle_DuplicateCode_ThrowsDuplicateDepartmentException_AndSavesNothing()
     {
-        _departments.Setup(r => r.CodeExistsAsync("TECH", It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        var command = new CreateDepartmentCommand(new CreateDepartmentRequest(" tech ", "Technology Copy", null));
+        // Arrange
+        _departments
+            .Setup(r => r.CodeExistsAsync(
+                "TECH",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
-        var ex = await Assert.ThrowsAsync<DuplicateDepartmentException>(() => _sut.Handle(command, CancellationToken.None));
+        var command = new CreateDepartmentCommand(
+            new CreateDepartmentRequest(
+                " tech ",
+                "Technology Copy",
+                null));
 
+        // Act
+        var ex = await Assert.ThrowsAsync<DuplicateDepartmentException>(
+            () => _sut.Handle(
+                command,
+                CancellationToken.None));
+
+        // Assert
         Assert.Equal(409, ex.StatusCode);
         Assert.Contains("TECH", ex.Message);
-        _departments.Verify(r => r.AddAsync(It.IsAny<Department>(), It.IsAny<CancellationToken>()), Times.Never);
-        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+
+        _departments.Verify(
+            r => r.AddAsync(
+                It.IsAny<Department>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _uow.Verify(
+            u => u.SaveChangesAsync(
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
     public async Task Handle_NewCode_StoresTheCodeTrimmedAndUpperCased()
     {
-        var command = new CreateDepartmentCommand(new CreateDepartmentRequest(" qa ", "Quality Assurance", null));
+        // Arrange
+        var command = new CreateDepartmentCommand(
+            new CreateDepartmentRequest(
+                " qa ",
+                "Quality Assurance",
+                null));
 
-        var id = await _sut.Handle(command, CancellationToken.None);
+        // Act
+        var id = await _sut.Handle(
+            command,
+            CancellationToken.None);
 
-        _departments.Verify(r => r.AddAsync(
-            It.Is<Department>(d => d.Id == id && d.Code == "QA" && d.Name == "Quality Assurance"),
-            It.IsAny<CancellationToken>()), Times.Once);
-        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Assert
+        _departments.Verify(
+            r => r.AddAsync(
+                It.Is<Department>(d =>
+                    d.Id == id &&
+                    d.Code == "QA" &&
+                    d.Name == "Quality Assurance"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _uow.Verify(
+            u => u.SaveChangesAsync(
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }
