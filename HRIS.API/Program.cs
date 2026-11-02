@@ -1,4 +1,3 @@
-
 using HRIS.API.Common;
 using HRIS.API.Common.Behaviors;
 using HRIS.API.Extensions;
@@ -17,6 +16,7 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
+    // Serilog configuration
     builder.AddHrisSerilog();
 
     // Controllers dan JSON configuration
@@ -33,6 +33,9 @@ try
 
     // Security: Password hashing dan JWT Bearer
     builder.Services.AddHrisSecurity(builder.Configuration);
+
+    // OpenAPI configuration
+    builder.Services.AddHrisOpenApi();
 
     // MediatR dan pipeline behaviors
     builder.Services.AddMediatR(cfg =>
@@ -63,9 +66,6 @@ try
     // Authorization policy
     builder.Services.AddSingleton<EmployeePolicy>();
 
-    // OpenAPI
-    builder.Services.AddOpenApi();
-
     var app = builder.Build();
 
     // Development Admin Seeder
@@ -77,33 +77,21 @@ try
     // Global exception handler
     app.UseExceptionHandler();
 
-    app.UseHttpsRedirection();
-
-    // CORS
-    app.UseCors();
-
     // Request monitoring
     app.UseRequestTiming();
     app.UseHrisRequestLogging();
 
-    // Swagger UI dan OpenAPI
-    // Hanya aktif pada Development
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi().AllowAnonymous();
-
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint(
-                "/openapi/v1.json",
-                "HRIS API");
-
-            options.RoutePrefix = "swagger";
-        });
-    }
-
     // Maintenance mode
     app.UseMaintenanceMode();
+
+    // OpenAPI dan Swagger UI
+    app.UseHrisOpenApi();
+
+    // HTTPS redirection
+    app.UseHttpsRedirection();
+
+    // CORS
+    app.UseCors();
 
     // Authentication
     app.UseAuthentication();
