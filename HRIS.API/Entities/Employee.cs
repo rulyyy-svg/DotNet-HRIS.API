@@ -20,10 +20,14 @@ public class Employee
     public Guid? DepartmentId { get; set; } 
     public Guid? PositionId { get; set; }
     public Guid? ManagerId { get; set; }
-    
+
+    public Guid? UserId { get; set; }
+
     // Relationships
     public Department Department { get; set; } = null!;
     public Position Position { get; set; } = null!;
     public Employee? Manager { get; set; }
     public ICollection<Employee> DirectReports { get; set; } = [];
+
+    public User? User { get; set; }
 }

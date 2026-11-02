@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using HRIS.API.Services.Email;
+using HRIS.API.Entities;
+using Microsoft.AspNetCore.Identity;
 namespace HRIS.API.Extensions;
 
 public static class ServiceCollectionExtensions
@@ -80,6 +82,7 @@ public static class ServiceCollectionExtensions
         services.AddExceptionHandler<DomainExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+        services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
         return services;
     }

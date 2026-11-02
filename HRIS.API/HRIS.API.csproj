@@ -28,9 +28,7 @@
 
 	<!-- Copy HTML email templates to build and publish output -->
 	<ItemGroup>
-		<None Update="Templates\**\*.html"
-              CopyToOutputDirectory="PreserveNewest"
-              CopyToPublishDirectory="PreserveNewest" />
+		<None Update="Templates\**\*.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
 	</ItemGroup>
 
 </Project>

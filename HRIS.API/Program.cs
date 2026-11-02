@@ -19,6 +19,7 @@ try
 
     builder.AddHrisSerilog();
 
+    // Controllers dan JSON configuration
     builder.Services.AddControllers(options =>
     {
         options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
@@ -27,8 +28,10 @@ try
         options.JsonSerializerOptions.Converters
             .Add(new JsonStringEnumConverter()));
 
+    // Application services
     builder.Services.AddHrisServices(builder.Configuration);
 
+    // MediatR dan pipeline behaviors
     builder.Services.AddMediatR(cfg =>
     {
         cfg.RegisterServicesFromAssemblyContaining<Program>();
@@ -36,8 +39,10 @@ try
         cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     });
 
+    // Custom middleware
     builder.Services.AddMiddleware();
 
+    // CORS
     builder.Services.AddCors(options =>
     {
         options.AddDefaultPolicy(policy =>
@@ -48,15 +53,18 @@ try
         });
     });
 
+    // Time provider
     builder.Services.AddSingleton<TimeProvider>(
         TimeProvider.System);
 
+    // Authorization policy
     builder.Services.AddSingleton<EmployeePolicy>();
 
     // Authentication
     // Basic Authentication Handler akan didaftarkan pada Lesson 5.
     builder.Services.AddAuthentication();
 
+    // OpenAPI
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
@@ -85,6 +93,7 @@ try
     // Authorization: memeriksa izin user
     app.UseAuthorization();
 
+    // OpenAPI dan Swagger UI
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
@@ -97,6 +106,7 @@ try
         });
     }
 
+    // Map API controllers
     app.MapControllers();
 
     app.Run();
