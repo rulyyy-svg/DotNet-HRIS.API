@@ -4,6 +4,8 @@ using HRIS.API.Features.Departments.Commands.CreateDepartment;
 using HRIS.API.Features.Departments.Queries.GetDepartments;
 using HRIS.API.Features.Departments.Queries.GetDepartmentTree;
 using HRIS.API.Models;
+using HRIS.API.Common.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,6 +29,7 @@ public class DepartmentsController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = Roles.HrOrAdmin)]
     public async Task<IActionResult> Create(
         [FromBody] CreateDepartmentRequest request,
         CancellationToken ct)

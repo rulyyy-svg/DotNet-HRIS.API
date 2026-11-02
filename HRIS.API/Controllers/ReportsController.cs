@@ -2,6 +2,8 @@
 using HRIS.API.Features.Reports.Queries.GetHeadcountByDepartment;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using HRIS.API.Common.Security;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HRIS.API.Controllers;
 
@@ -10,6 +12,7 @@ namespace HRIS.API.Controllers;
 public class ReportsController(ISender sender) : ControllerBase
 {
     [HttpGet("headcount-by-department")]
+    [Authorize(Policy = Policies.HrOnly)]
     public async Task<
         ActionResult<IReadOnlyCollection<HeadcountByDepartmentDto>>>
         HeadcountByDepartment(CancellationToken ct)

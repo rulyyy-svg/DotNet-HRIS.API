@@ -1,10 +1,13 @@
 using HRIS.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using HRIS.API.Common.Security;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HRIS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = Roles.Admin)]
 public class DiagnosticsController(
     ITransientOperation transient,
     IScopedOperation scoped,

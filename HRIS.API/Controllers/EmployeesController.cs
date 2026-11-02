@@ -1,4 +1,6 @@
+
 using HRIS.API.Common.Paging;
+using HRIS.API.Common.Security;
 using HRIS.API.Entities;
 using HRIS.API.Features.Departments.Queries.GetDepartmentTree;
 using HRIS.API.Features.Employees.Commands.AssignManager;
@@ -8,8 +10,10 @@ using HRIS.API.Features.Employees.Commands.TerminateEmployee;
 using HRIS.API.Features.Employees.Commands.UpdateEmployee;
 using HRIS.API.Features.Employees.Queries.GetEmployeeById;
 using HRIS.API.Features.Employees.Queries.GetEmployees;
+using HRIS.API.Features.Employees.Queries.GetMyProfile;
 using HRIS.API.Models;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRIS.API.Controllers;
@@ -24,6 +28,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 {
     // GET: /api/employees
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<PagedResult<EmployeeListDto>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] Guid? departmentId,
@@ -50,6 +55,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 
     // GET: /api/employees/{id}
     [HttpGet("{id:guid}")]
+    [Authorize]
     public async Task<ActionResult<EmployeeResponse>> GetById(
         [FromRoute] Guid id,
         CancellationToken ct)
@@ -62,6 +68,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 
     // POST: /api/employees
     [HttpPost]
+    [Authorize(Roles = Roles.HrOrAdmin)]
     [ProducesResponseType<EmployeeResponse>(StatusCodes.Status201Created)]
     public async Task<ActionResult<EmployeeResponse>> Create(
         [FromBody] CreateEmployeeRequest request,
@@ -81,6 +88,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 
     // PUT: /api/employees/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = Roles.HrOrAdmin)]
     public async Task<IActionResult> Update(
         [FromRoute] Guid id,
         [FromBody] UpdateEmployeeRequest request,
@@ -94,6 +102,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 
     // PUT: /api/employees/{id}/manager
     [HttpPut("{id:guid}/manager")]
+    [Authorize(Roles = Roles.HrOrAdmin)]
     public async Task<IActionResult> AssignManager(
         [FromRoute] Guid id,
         [FromBody] AssignManagerRequest request,
@@ -107,6 +116,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 
     // POST: /api/employees/{id}/terminate
     [HttpPost("{id:guid}/terminate")]
+    [Authorize(Policy = Policies.HrOnly)]
     public async Task<IActionResult> Terminate(
         [FromRoute] Guid id,
         CancellationToken ct)
@@ -119,6 +129,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 
     // DELETE: /api/employees/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(
         [FromRoute] Guid id,
         CancellationToken ct)
@@ -131,6 +142,7 @@ public class EmployeesController(ISender sender) : ControllerBase
 
     // GET: /api/employees/tree
     [HttpGet("tree")]
+    [Authorize]
     public async Task<ActionResult<IReadOnlyCollection<DepartmentTreeDto>>> GetTree(
         CancellationToken ct)
     {
@@ -138,5 +150,17 @@ public class EmployeesController(ISender sender) : ControllerBase
             new GetDepartmentTreeQuery(), ct);
 
         return Ok(result);
+    }
+
+    // GET: /api/employees/me
+    [HttpGet("me")]
+    [Authorize(Policy = Policies.HasEmployeeProfile)]
+    public async Task<ActionResult<EmployeeResponse>> GetMine(
+        CancellationToken ct)
+    {
+        var employee = await sender.Send(
+            new GetMyProfileQuery(), ct);
+
+        return Ok(employee);
     }
 }

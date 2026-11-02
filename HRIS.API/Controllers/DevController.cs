@@ -2,11 +2,13 @@
 using System.ComponentModel.DataAnnotations;
 using HRIS.API.Services.Email;
 using Microsoft.AspNetCore.Mvc;
-
+using HRIS.API.Common.Security;
+using Microsoft.AspNetCore.Authorization;
 namespace HRIS.API.Controllers;
 
 [ApiController]
 [Route("api/dev")]
+[Authorize(Roles = Roles.Admin)]
 public class DevController(
     IEmailService emailService,
     IEmailTemplateRenderer renderer,

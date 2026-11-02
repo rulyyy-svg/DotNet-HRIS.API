@@ -2,6 +2,8 @@
 using HRIS.API.Features.Positions.Commands.CreatePosition;
 using HRIS.API.Features.Positions.Queries.GetPositions;
 using HRIS.API.Models;
+using HRIS.API.Common.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +18,7 @@ public class PositionsController(ISender sender) : ControllerBase
         => Ok(await sender.Send(new GetPositionsQuery(), ct));
 
     [HttpPost]
+    [Authorize(Roles = Roles.HrOrAdmin)]
     public async Task<IActionResult> Create([FromBody] CreatePositionRequest request, CancellationToken ct)
     {
         var id = await sender.Send(new CreatePositionCommand(request), ct);

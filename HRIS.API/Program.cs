@@ -31,6 +31,9 @@ try
     // Application services
     builder.Services.AddHrisServices(builder.Configuration);
 
+    // Security: Password hashing dan Basic Authentication
+    builder.Services.AddHrisSecurity();
+
     // MediatR dan pipeline behaviors
     builder.Services.AddMediatR(cfg =>
     {
@@ -60,14 +63,16 @@ try
     // Authorization policy
     builder.Services.AddSingleton<EmployeePolicy>();
 
-    // Authentication
-    // Basic Authentication Handler akan didaftarkan pada Lesson 5.
-    builder.Services.AddAuthentication();
-
     // OpenAPI
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
+
+    // Development Admin Seeder
+    if (app.Environment.IsDevelopment())
+    {
+        await app.SeedBootstrapAdminAsync();
+    }
 
     // Global exception handler
     app.UseExceptionHandler();
@@ -84,19 +89,19 @@ try
     // Maintenance mode
     app.UseMaintenanceMode();
 
-    // Authentication: mengenali user
+    // Authentication
     app.UseAuthentication();
 
     // User context logging
     app.UseMiddleware<UserContextLoggingMiddleware>();
 
-    // Authorization: memeriksa izin user
+    // Authorization
     app.UseAuthorization();
 
     // OpenAPI dan Swagger UI
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();
+        app.MapOpenApi().AllowAnonymous();
 
         app.UseSwaggerUI(options =>
         {
