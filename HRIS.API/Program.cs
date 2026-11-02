@@ -31,7 +31,7 @@ try
     // Application services
     builder.Services.AddHrisServices(builder.Configuration);
 
-    // Security: Password hashing, Basic Authentication, dan JWT
+    // Security: Password hashing dan JWT Bearer
     builder.Services.AddHrisSecurity(builder.Configuration);
 
     // MediatR dan pipeline behaviors
@@ -86,6 +86,22 @@ try
     app.UseRequestTiming();
     app.UseHrisRequestLogging();
 
+    // Swagger UI dan OpenAPI
+    // Hanya aktif pada Development
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi().AllowAnonymous();
+
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint(
+                "/openapi/v1.json",
+                "HRIS API");
+
+            options.RoutePrefix = "swagger";
+        });
+    }
+
     // Maintenance mode
     app.UseMaintenanceMode();
 
@@ -97,19 +113,6 @@ try
 
     // Authorization
     app.UseAuthorization();
-
-    // OpenAPI dan Swagger UI
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi().AllowAnonymous();
-
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint(
-                "/openapi/v1.json",
-                "HRIS API");
-        });
-    }
 
     // Map API controllers
     app.MapControllers();
