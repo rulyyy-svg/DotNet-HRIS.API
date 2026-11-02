@@ -19,7 +19,6 @@ try
 
     builder.AddHrisSerilog();
 
-
     builder.Services.AddControllers(options =>
     {
         options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
@@ -50,27 +49,40 @@ try
     });
 
     builder.Services.AddSingleton<TimeProvider>(
-    TimeProvider.System);
+        TimeProvider.System);
 
     builder.Services.AddSingleton<EmployeePolicy>();
+
+    // Authentication
+    // Basic Authentication Handler akan didaftarkan pada Lesson 5.
+    builder.Services.AddAuthentication();
 
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
 
-    // Global exception handler harus berada di awal pipeline.
+    // Global exception handler
     app.UseExceptionHandler();
 
     app.UseHttpsRedirection();
+
+    // CORS
     app.UseCors();
 
+    // Request monitoring
     app.UseRequestTiming();
     app.UseHrisRequestLogging();
 
-    app.UseMiddleware<UserContextLoggingMiddleware>();
-
+    // Maintenance mode
     app.UseMaintenanceMode();
 
+    // Authentication: mengenali user
+    app.UseAuthentication();
+
+    // User context logging
+    app.UseMiddleware<UserContextLoggingMiddleware>();
+
+    // Authorization: memeriksa izin user
     app.UseAuthorization();
 
     if (app.Environment.IsDevelopment())
