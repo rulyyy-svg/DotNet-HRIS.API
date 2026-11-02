@@ -1,49 +1,64 @@
-﻿using HRIS.API.Common.Exceptions;
+﻿
+using HRIS.API.Common.Exceptions;
 using HRIS.API.Data;
 using HRIS.API.Data.Repositories;
 using HRIS.API.Entities;
 using HRIS.API.Extensions;
 using HRIS.API.Models;
+using HRIS.API.Services.Email;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRIS.API.Features.Employees.Commands.CreateEmployee;
 
 public record CreateEmployeeCommand(
-    CreateEmployeeRequest Request) : IRequest<Guid>;
+    CreateEmployeeRequest Request
+) : IRequest<Guid>;
 
 public class CreateEmployeeCommandHandler(
     IUnitOfWork uow,
     TimeProvider timeProvider,
-    ILogger<CreateEmployeeCommandHandler> logger)
-    : IRequestHandler<CreateEmployeeCommand, Guid>
+    IEmailService emailService,
+    IEmailTemplateRenderer templateRenderer,
+    IConfiguration configuration,
+    ILogger<CreateEmployeeCommandHandler> logger
+) : IRequestHandler<CreateEmployeeCommand, Guid>
 {
     public async Task<Guid> Handle(
         CreateEmployeeCommand command,
         CancellationToken ct)
     {
+        // Module 7: Normalize email
         var request = command.Request with
         {
             Email = command.Request.Email.NormalizeEmail()
         };
 
+        // Check duplicate employee number
         if (await uow.Employees.EmployeeNumberExistsAsync(
-                request.EmployeeNumber, ct))
+            request.EmployeeNumber, ct))
         {
             throw new DuplicateEmployeeException(
-                $"Employee number '{request.EmployeeNumber}' is already used.");
+                $"Employee number '{request.EmployeeNumber}' is already used."
+            );
         }
 
-        if (await uow.Employees.EmailExistsAsync(request.Email, ct))
+        // Check duplicate email
+        if (await uow.Employees.EmailExistsAsync(
+            request.Email, ct))
         {
             throw new DuplicateEmployeeException(
-                "The email is already used by another employee.");
+                "The email is already used by another employee."
+            );
         }
 
+        // Create employee entity
         var employee = request.ToEntity(
             timeProvider.GetUtcNow(),
-            EmployeeStatus.Active);
+            EmployeeStatus.Active
+        );
 
+        // Save employee
         await uow.Employees.AddAsync(employee, ct);
 
         try
@@ -54,12 +69,70 @@ public class CreateEmployeeCommandHandler(
             when (ex.IsUniqueConstraintViolation())
         {
             throw new DuplicateEmployeeException(
-                "Employee number or email is already used.", ex);
+                "Employee number or email is already used.",
+                ex
+            );
         }
 
         logger.LogInformation(
             "Employee {EmployeeId} created",
-            employee.Id);
+            employee.Id
+        );
+
+        // Module 9: Send Welcome Email
+        try
+        {
+            var frontendUrl = configuration["App:FrontendUrl"]
+                ?? throw new InvalidOperationException(
+                    "App:FrontendUrl is not configured."
+                );
+
+            var activationUrl =
+                $"{frontendUrl.TrimEnd('/')}/activate";
+
+            var html = await templateRenderer.RenderAsync(
+                "WelcomeEmployee",
+                new Dictionary<string, string>
+                {
+                    ["FullName"] = employee.FullName,
+                    ["EmployeeNumber"] = employee.EmployeeNumber,
+                    ["ActivationUrl"] = activationUrl
+                },
+                ct
+            );
+
+            await emailService.SendEmailAsync(
+                new MailRequest
+                {
+                    ToEmail = employee.Email,
+                    Subject = $"Welcome to the team, {employee.FullName}",
+                    HtmlBody = html,
+                    TextBody =
+                        $"Welcome, {employee.FullName}. " +
+                        $"Your employee number is {employee.EmployeeNumber}. " +
+                        $"Activate your account: {activationUrl}"
+                },
+                ct
+            );
+        }
+        catch (EmailDeliveryException ex)
+        {
+            logger.LogWarning(
+                "Welcome email for employee {EmployeeId} was not delivered: {Reason} ({Cause})",
+                employee.Id,
+                ex.Message,
+                ex.InnerException?.GetType().Name
+            );
+        }
+        catch (Exception ex) when (
+            ex is not OperationCanceledException)
+        {
+            logger.LogError(
+                ex,
+                "Welcome email for employee {EmployeeId} failed unexpectedly",
+                employee.Id
+            );
+        }
 
         return employee.Id;
     }

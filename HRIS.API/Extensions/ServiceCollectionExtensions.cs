@@ -42,6 +42,12 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(MailSettings.SectionName)
         );
 
+        // Module 9: Email Template Renderer
+        services.AddSingleton<
+            IEmailTemplateRenderer,
+            FileEmailTemplateRenderer
+        >();
+
         services.AddProblemDetails(options =>
         {
             options.CustomizeProblemDetails = context =>

@@ -1,19 +1,15 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
-using System.Text.Encodings.Web;
 using HRIS.API.Services.Email;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRIS.API.Controllers;
 
-/// <summary>
-/// Module 9 helper: sends one test email.
-/// Development only.
-/// </summary>
 [ApiController]
 [Route("api/dev")]
 public class DevController(
     IEmailService emailService,
+    IEmailTemplateRenderer renderer,
     IWebHostEnvironment env
 ) : ControllerBase
 {
@@ -27,36 +23,37 @@ public class DevController(
         TestEmailRequest request,
         CancellationToken ct)
     {
-        // 1. Hanya berjalan di Development
         if (!env.IsDevelopment())
             return NotFound();
 
-        // 2. Encode input agar aman ketika dimasukkan ke HTML
-        var name = HtmlEncoder.Default.Encode(request.FullName);
+        var html = await renderer.RenderAsync(
+            "WelcomeEmployee",
+            new Dictionary<string, string>
+            {
+                ["FullName"] = request.FullName,
+                ["EmployeeNumber"] = "EMP-0000",
+                ["ActivationUrl"] = "https://localhost:5173/activate"
+            },
+            ct
+        );
 
         try
         {
-            // 3. Mengirim email menggunakan IEmailService
             await emailService.SendEmailAsync(
                 new MailRequest
                 {
                     ToEmail = request.To,
-
                     Subject = $"HRIS test email for {request.FullName}",
-
-                    HtmlBody = $"""
-                        <h1>Hello {name}</h1>
-                        <p>This is a test email from <strong>HRIS</strong>.</p>
-                        """,
-
-                    TextBody = $"Hello {request.FullName}, this is a test email from HRIS."
+                    HtmlBody = html,
+                    TextBody =
+                        $"Welcome, {request.FullName}. " +
+                        "Open this email in an HTML-capable client to activate your account."
                 },
                 ct
             );
         }
         catch (EmailDeliveryException ex)
         {
-            // 4. Menampilkan error khusus Development
             return Problem(
                 statusCode: StatusCodes.Status502BadGateway,
                 title: "The email could not be delivered.",
@@ -64,7 +61,6 @@ public class DevController(
             );
         }
 
-        // 5. Email berhasil dikirim
         return NoContent();
     }
 }
